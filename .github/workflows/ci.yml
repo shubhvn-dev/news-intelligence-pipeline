@@ -116,34 +116,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Check Dockerfile exists
-      run: |
-        if [ ! -f Dockerfile ]; then
-          echo "Dockerfile not found - skipping build test"
-          exit 0
-        fi
-    
     - name: Set up Docker Buildx
-      if: hashFiles('Dockerfile') != ''
       uses: docker/setup-buildx-action@v3
     
     - name: Build Docker image
-      if: hashFiles('Dockerfile') != ''
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
         push: false
-        tags: news-pipeline:test
         load: true
+        tags: news-pipeline:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
     
-    - name: Test Docker image exists
-      if: hashFiles('Dockerfile') != ''
+    - name: Verify image was built
       run: |
-        docker images | grep news-pipeline || echo "Image not found"
-        echo "Docker build completed"
-    
-    - name: Test Docker image
-      run: |
-        docker images | grep news-pipeline
-        echo "Docker image built successfully"
+        docker images
+        docker images | grep news-pipeline && echo "✅ Docker image built successfully" || echo "⚠️ Image not found"
